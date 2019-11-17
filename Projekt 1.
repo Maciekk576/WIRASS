@@ -37,8 +37,45 @@ ggplot(GDP, aes(y = values, x = time, col = geo)) + geom_line(size = 1) +
  # + coord_cartesian(xlim = c(, 5))
   
   #ograniczyć do po 2011; zmienić legendę
-  
-  #Crime, violence or vandalism in the area - EU-SILC survey
+
+var_geo <- aggregate(GDP$values, list(GDP$geo), sd)
+var_geo
+
+CPI <- get_eurostat("prc_hicp_aind") %>% 
+  filter(geo == "PL" | geo == "CZ" | geo == "LT" | geo == "LV" | geo == "MT") %>%
+  filter(time > as_datetime(ymd(20110101))) %>% filter(unit == "INX_A_AVG") %>%
+  select(-unit)
+
+CPI_diff <- get_eurostat("prc_hicp_aind") %>% 
+  filter(geo == "PL" | geo == "CZ" | geo == "LT" | geo == "LV" | geo == "MT") %>%
+  filter(time > as_datetime(ymd(20110101))) %>% filter(unit == "RCH_A_AVG") %>%
+  select(-unit)
+
+CPI_Health_diff <- CPI_diff %>% filter(coicop == "CP06") %>% select(-coicop)
+CPI_Transport_diff <- CPI_diff %>% filter(coicop == "CP07") %>% select(-coicop)
+CPI_Recreation_Culture_diff <- CPI_diff %>% filter(coicop == "CP09") %>% select(-coicop)
+
+CPI_Health <- CPI %>% filter(coicop == "CP06") %>% select(-coicop)
+CPI_Transport <- CPI %>% filter(coicop == "CP07") %>% select(-coicop)
+CPI_Recreation_Culture <- CPI %>% filter(coicop == "CP09") %>% select(-coicop)
+
+ggplot(CPI_Health, aes(y = values, x = time, col = geo)) +
+  xlab("year") + ylab("CPI Health change") + geom_smooth(size = 1, se = F) 
+# + facet_wrap(~ geo)+ geom_point(size = 1)
+
+ggplot(CPI_Transport, aes(y = values, x = time, col = geo))  +
+  xlab("year") + ylab("CPI Transport change") + geom_smooth(size = 1, se = F) 
+#+ facet_wrap(~ geo)+ geom_point(size = 1)
+
+ggplot(CPI_Recreation_Culture, aes(y = values, x = time, col = geo)) +
+  xlab("year") + ylab("CPI Recreation and Culture change") + geom_smooth(size = 1, se = F)
+# + facet_wrap(~ geo) +  geom_point(size = 1)
+
+
+
+
+
+#Crime, violence or vandalism in the area - EU-SILC survey
 #calculated as the percentage of people in each dimension k who report to be feeling crime, violence or vandalism in the area over the total population in that k.
 CRIME <- get_eurostat("ilc_mddw03") %>% #select(geo, time, values) %>%
   filter(geo == "PL" | geo == "CZ" | geo == "LT" | geo == "LV" | geo == "MT") %>%
@@ -74,36 +111,3 @@ TRANSPORT <- get_eurostat("ttr00001") %>% select(geo, time, values) %>%
 ggplot(TRANSPORT, aes(y = values, x = time, col = geo)) + geom_point(size = 1) +
   xlab("year") + ylab("Volume of passenger transport relative to GDP ") + facet_wrap(~ geo)
 
-
-var_geo <- aggregate(GDP$values, list(GDP$geo), sd)
-var_geo
-
-CPI <- get_eurostat("prc_hicp_aind") %>% 
-  filter(geo == "PL" | geo == "CZ" | geo == "LT" | geo == "LV" | geo == "MT") %>%
-  filter(time > as_datetime(ymd(20110101))) %>% filter(unit == "INX_A_AVG") %>%
-  select(-unit)
-
-CPI_diff <- get_eurostat("prc_hicp_aind") %>% 
-  filter(geo == "PL" | geo == "CZ" | geo == "LT" | geo == "LV" | geo == "MT") %>%
-  filter(time > as_datetime(ymd(20110101))) %>% filter(unit == "RCH_A_AVG") %>%
-  select(-unit)
-
-CPI_Health_diff <- CPI_diff %>% filter(coicop == "CP06") %>% select(-coicop)
-CPI_Transport_diff <- CPI_diff %>% filter(coicop == "CP07") %>% select(-coicop)
-CPI_Recreation_Culture_diff <- CPI_diff %>% filter(coicop == "CP09") %>% select(-coicop)
-
-CPI_Health <- CPI %>% filter(coicop == "CP06") %>% select(-coicop)
-CPI_Transport <- CPI %>% filter(coicop == "CP07") %>% select(-coicop)
-CPI_Recreation_Culture <- CPI %>% filter(coicop == "CP09") %>% select(-coicop)
-
-ggplot(CPI_Health, aes(y = values, x = time, col = geo)) +
-  xlab("year") + ylab("CPI Health change") + geom_smooth(size = 1, se = F) 
-# + facet_wrap(~ geo)+ geom_point(size = 1)
-
-ggplot(CPI_Transport, aes(y = values, x = time, col = geo))  +
-  xlab("year") + ylab("CPI Transport change") + geom_smooth(size = 1, se = F) 
-#+ facet_wrap(~ geo)+ geom_point(size = 1)
-
-ggplot(CPI_Recreation_Culture, aes(y = values, x = time, col = geo)) +
-  xlab("year") + ylab("CPI Recreation and Culture change") + geom_smooth(size = 1, se = F)
-# + facet_wrap(~ geo) +  geom_point(size = 1)
