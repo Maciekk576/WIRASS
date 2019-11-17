@@ -1,0 +1,109 @@
+# Polska, Litwa, Łotwa, Czechy, Malta
+
+"Economic stability"
+
+# Changes in the GDP over time provide a measure of stability. + 
+# The GDP measures the total output of a nation’s economy in inflation-adjusted monetary terms.
+# consumer prices and the national unemployment rate. +
+# Currency exchange rates and world stock prices (boxplot)
+
+"Political stability"
+
+# 
+
+"Miękkie"
+
+# Crime + 
+# Transport - Road, Railway, Air + 
+# Environment - Emission
+# Access to healthcare
+# Access to leasure
+# coś o obcokrajowcach
+
+library(eurostat)
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+
+GDP <- get_eurostat("tec00115") %>% select(geo, time, values) %>%
+  filter(geo == "PL" | geo == "CZ" | geo == "LT" | geo == "LV" | geo == "MT") %>%
+  filter(time >= as_datetime(ymd(20110101))) 
+
+ggplot(GDP, aes(y = values, x = time, col = geo)) + geom_line(size = 1) +
+  xlab("year") + ylab("GDP change")# + scale_fill_discrete(labels = c(rep("XD", 5)))
+                        
+                        
+                        # +
+ # + coord_cartesian(xlim = c(, 5))
+  
+  #ograniczyć do po 2011; zmienić legendę
+  
+  #Crime, violence or vandalism in the area - EU-SILC survey
+#calculated as the percentage of people in each dimension k who report to be feeling crime, violence or vandalism in the area over the total population in that k.
+CRIME <- get_eurostat("ilc_mddw03") %>% #select(geo, time, values) %>%
+  filter(geo == "PL" | geo == "CZ" | geo == "LT" | geo == "LV" | geo == "MT") %>%
+  filter(time >= as_datetime(ymd(20110101)))
+
+CRIME_total <- CRIME %>% filter(hhtyp == "TOTAL", incgrp == "TOTAL") %>% select(geo, time, values)
+
+ggplot(CRIME_total, aes(y = values, x = time, col = geo)) + geom_point(size = 1) +
+  xlab("year") + ylab("percentage") + facet_wrap(~ geo)
+
+mean_CRIME <- aggregate(CRIME_total$values, list(CRIME_total$geo), mean)
+colnames(mean_CRIME) <-  c("geo", "mean")
+
+#install.packages("RColorBrewer")
+library(RColorBrewer)
+
+#ggplot(mean_CRIME, aes(y = mean, x = geo)) + geom_bar(stat='identity', aes(fill = geo)) # + scale_fill_brewer(palette="rainbow")
+ggplot(mean_CRIME, aes(y = mean, x = geo)) + geom_bar(stat='identity', aes(fill = geo), col="dim grey") +
+  scale_fill_brewer(palette="Blues")
+
+
+#zmienić granice wykresu + słupki
+
+#Environment
+
+#Volume of passenger transport relative to GDP  
+#This indicator is defined as the ratio between the volume of inland passenger transport measured in passenger-kilometres and GDP.
+#It includes transport on national territory by passenger car, bus and coach, and train.
+TRANSPORT <- get_eurostat("ttr00001") %>% select(geo, time, values) %>%
+  filter(geo == "PL" | geo == "CZ" | geo == "LT" | geo == "LV" | geo == "MT") %>%
+  filter(time >= as_datetime(ymd(20110101)))
+
+ggplot(TRANSPORT, aes(y = values, x = time, col = geo)) + geom_point(size = 1) +
+  xlab("year") + ylab("Volume of passenger transport relative to GDP ") + facet_wrap(~ geo)
+
+
+var_geo <- aggregate(GDP$values, list(GDP$geo), sd)
+var_geo
+
+CPI <- get_eurostat("prc_hicp_aind") %>% 
+  filter(geo == "PL" | geo == "CZ" | geo == "LT" | geo == "LV" | geo == "MT") %>%
+  filter(time > as_datetime(ymd(20110101))) %>% filter(unit == "INX_A_AVG") %>%
+  select(-unit)
+
+CPI_diff <- get_eurostat("prc_hicp_aind") %>% 
+  filter(geo == "PL" | geo == "CZ" | geo == "LT" | geo == "LV" | geo == "MT") %>%
+  filter(time > as_datetime(ymd(20110101))) %>% filter(unit == "RCH_A_AVG") %>%
+  select(-unit)
+
+CPI_Health_diff <- CPI_diff %>% filter(coicop == "CP06") %>% select(-coicop)
+CPI_Transport_diff <- CPI_diff %>% filter(coicop == "CP07") %>% select(-coicop)
+CPI_Recreation_Culture_diff <- CPI_diff %>% filter(coicop == "CP09") %>% select(-coicop)
+
+CPI_Health <- CPI %>% filter(coicop == "CP06") %>% select(-coicop)
+CPI_Transport <- CPI %>% filter(coicop == "CP07") %>% select(-coicop)
+CPI_Recreation_Culture <- CPI %>% filter(coicop == "CP09") %>% select(-coicop)
+
+ggplot(CPI_Health, aes(y = values, x = time, col = geo)) +
+  xlab("year") + ylab("CPI Health change") + geom_smooth(size = 1, se = F) 
+# + facet_wrap(~ geo)+ geom_point(size = 1)
+
+ggplot(CPI_Transport, aes(y = values, x = time, col = geo))  +
+  xlab("year") + ylab("CPI Transport change") + geom_smooth(size = 1, se = F) 
+#+ facet_wrap(~ geo)+ geom_point(size = 1)
+
+ggplot(CPI_Recreation_Culture, aes(y = values, x = time, col = geo)) +
+  xlab("year") + ylab("CPI Recreation and Culture change") + geom_smooth(size = 1, se = F)
+# + facet_wrap(~ geo) +  geom_point(size = 1)
